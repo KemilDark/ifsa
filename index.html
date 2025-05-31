@@ -15,53 +15,27 @@
         .modal-content {
             @apply bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full;
         }
-        #sidebar {
-            @apply fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out z-50;
-        }
-        #sidebar.open {
-            @apply translate-x-0;
+        .loading {
+            @apply opacity-50 pointer-events-none;
         }
     </style>
 </head>
 <body>
-    <!-- Hamburger Menu Button -->
-    <button id="hamburger" class="fixed top-4 left-4 z-50 p-2 rounded-md bg-gray-200 dark:bg-gray-700 md:hidden">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-        </svg>
-    </button>
-
-    <!-- Sidebar (Hamburger Menu) -->
-    <div id="sidebar" class="md:hidden">
-        <div class="p-4">
-            <h2 class="text-xl font-bold mb-4">Menü</h2>
-            <ul class="space-y-2">
-                <li><a href="#" class="block p-2 rounded hover:bg-blue-100 dark:hover:bg-gray-700">Ana Sayfa</a></li>
-                <li><button id="themeToggle" class="w-full text-left p-2 rounded hover:bg-blue-100 dark:hover:bg-gray-700 flex items-center">
-                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    Tema Değiştir
-                </button></li>
-            </ul>
-        </div>
-    </div>
-
     <div class="container max-w-4xl mx-auto p-4 sm:p-6 flex-1">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-3xl font-bold">İfşa Platformu</h1>
-            <button id="themeToggleDesktop" class="hidden md:block p-2 rounded-full bg-gray-200 dark:bg-gray-700">
+            <button id="themeToggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
             </button>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+        <div id="postForm" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
             <input id="whom" type="text" placeholder="Kimi ifşa ediyorsun?" class="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" aria-label="Kimi ifşa ediliyor">
             <textarea id="postContent" placeholder="İfşa içeriğinizi buraya yazın (maks. 500 karakter)" rows="5" maxlength="500" class="w-full p-3 mb-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" aria-label="İfşa içeriği"></textarea>
             <p id="charCount" class="text-sm text-gray-500 dark:text-gray-400 mb-4">Kalan: 500/500</p>
-            <button onclick="submitPost()" class="bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition-colors w-full">Paylaş</button>
+            <button id="submitButton" onclick="submitPost()" class="bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition-colors w-full">Paylaş</button>
         </div>
 
         <div id="posts" class="mt-6 space-y-4"></div>
@@ -84,7 +58,7 @@
         // Firebase configuration (replace with your Firebase project config)
         const firebaseConfig = {
             // TODO: Replace with your Firebase project configuration
-              apiKey: "AIzaSyAxYj2wdUz0ZXcC19DMs7B3ZCySZ1Ys34Q",
+             apiKey: "AIzaSyAxYj2wdUz0ZXcC19DMs7B3ZCySZ1Ys34Q",
   authDomain: "ifsaplatformu-db7d6.firebaseapp.com",
   projectId: "ifsaplatformu-db7d6",
   storageBucket: "ifsaplatformu-db7d6.firebasestorage.app",
@@ -101,27 +75,19 @@
         // Automatically sign in anonymously on page load
         auth.signInAnonymously()
             .then(() => {
+                console.log('Anonim oturum açıldı');
                 loadPosts();
             })
             .catch((error) => {
-                showModal('Hata: ' + error.message);
+                showModal(`Oturum açma hatası: ${error.message}`);
+                console.error('Anonim oturum hatası:', error);
             });
-
-        // Hamburger menu toggle
-        const hamburger = document.getElementById('hamburger');
-        const sidebar = document.getElementById('sidebar');
-        hamburger.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-        });
 
         // Theme toggle
         const themeToggle = document.getElementById('themeToggle');
-        const themeToggleDesktop = document.getElementById('themeToggleDesktop');
-        [themeToggle, themeToggleDesktop].forEach(toggle => {
-            toggle.addEventListener('click', () => {
-                document.documentElement.classList.toggle('dark');
-                localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-            });
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
         });
 
         // Apply saved theme
@@ -144,22 +110,33 @@
         }
         function closeModal() {
             document.getElementById('modal').classList.add('hidden');
-            sidebar.classList.remove('open');
         }
 
         // Submit post
         function submitPost() {
+            const submitButton = document.getElementById('submitButton');
+            const postForm = document.getElementById('postForm');
+            postForm.classList.add('loading');
+            submitButton.disabled = true;
+
             const whom = document.getElementById('whom').value;
             const content = document.getElementById('postContent').value;
+
             if (!whom.trim() || !content.trim()) {
                 showModal('Lütfen tüm alanları doldurun!');
+                postForm.classList.remove('loading');
+                submitButton.disabled = false;
                 return;
             }
+
             const user = auth.currentUser;
             if (!user) {
-                showModal('Lütfen tekrar deneyin, oturum açılamadı.');
+                showModal('Oturum açılamadı, lütfen tekrar deneyin.');
+                postForm.classList.remove('loading');
+                submitButton.disabled = false;
                 return;
             }
+
             const post = {
                 whom: whom,
                 content: content,
@@ -167,19 +144,27 @@
                 userId: 'anonymous',
                 likes: 0
             };
-            database.ref('posts').push(post)
+
+            database.ref('posts/general').push(post)
                 .then(() => {
                     document.getElementById('whom').value = '';
                     document.getElementById('postContent').value = '';
                     charCount.textContent = 'Kalan: 500/500';
                     showModal('Paylaşım yapıldı!');
                 })
-                .catch((error) => showModal('Hata: ' + error.message));
+                .catch((error) => {
+                    showModal(`Paylaşım hatası: ${error.message}`);
+                    console.error('Paylaşım hatası:', error);
+                })
+                .finally(() => {
+                    postForm.classList.remove('loading');
+                    submitButton.disabled = false;
+                });
         }
 
         // Load posts
         function loadPosts() {
-            database.ref('posts').on('value', (snapshot) => {
+            database.ref('posts/general').on('value', (snapshot) => {
                 const posts = snapshot.val();
                 const postsDiv = document.getElementById('posts');
                 postsDiv.innerHTML = '';
@@ -205,6 +190,9 @@
                         postsDiv.appendChild(postElement);
                     });
                 }
+            }, (error) => {
+                showModal(`Paylaşımlar yüklenemedi: ${error.message}`);
+                console.error('Paylaşımlar yükleme hatası:', error);
             });
         }
 
@@ -215,9 +203,12 @@
                 showModal('Oturum açılamadı, beğeni eklenemedi.');
                 return;
             }
-            database.ref(`posts/${postId}/likes`).transaction((currentLikes) => {
+            database.ref(`posts/general/${postId}/likes`).transaction((currentLikes) => {
                 return (currentLikes || 0) + 1;
-            }).catch((error) => showModal('Hata: ' + error.message));
+            }).catch((error) => {
+                showModal(`Beğeni hatası: ${error.message}`);
+                console.error('Beğeni hatası:', error);
+            });
         }
     </script>
 </body>
