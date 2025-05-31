@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İfşa Platformu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            @apply bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-300;
+        }
+        .modal {
+            @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden;
+        }
+        .modal-content {
+            @apply bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full;
+        }
+        #sidebar {
+            @apply fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out z-50;
+        }
+        #sidebar.open {
+            @apply translate-x-0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hamburger Menu Button -->
+    <button id="hamburger" class="fixed top-4 left-4 z-50 p-2 rounded-md bg-gray-200 dark:bg-gray-700 md:hidden">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+        </svg>
+    </button>
+
+    <!-- Sidebar (Hamburger Menu) -->
+    <div id="sidebar" class="md:hidden">
+        <div class="p-4">
+            <h2 class="text-xl font-bold mb-4">Menü</h2>
+            <ul class="space-y-2">
+                <li><a href="#" class="block p-2 rounded hover:bg-blue-100 dark:hover:bg-gray-700">Ana Sayfa</a></li>
+                <li><button id="themeToggle" class="w-full text-left p-2 rounded hover:bg-blue-100 dark:hover:bg-gray-700 flex items-center">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    Tema Değiştir
+                </button></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container max-w-4xl mx-auto p-4 sm:p-6 flex-1">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold">İfşa Platformu</h1>
+            <button id="themeToggleDesktop" class="hidden md:block p-2 rounded-full bg-gray-200 dark:bg-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <input id="whom" type="text" placeholder="Kimi ifşa ediyorsun?" class="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" aria-label="Kimi ifşa ediliyor">
+            <textarea id="postContent" placeholder="İfşa içeriğinizi buraya yazın (maks. 500 karakter)" rows="5" maxlength="500" class="w-full p-3 mb-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" aria-label="İfşa içeriği"></textarea>
+            <p id="charCount" class="text-sm text-gray-500 dark:text-gray-400 mb-4">Kalan: 500/500</p>
+            <button onclick="submitPost()" class="bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition-colors w-full">Paylaş</button>
+        </div>
+
+        <div id="posts" class="mt-6 space-y-4"></div>
+
+        <!-- Modal for messages -->
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <p id="modalMessage" class="text-center"></p>
+                <button onclick="closeModal()" class="mt-4 bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 w-full">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+
+    <script>
+        // Firebase configuration (replace with your Firebase project config)
+        const firebaseConfig = {
+            // TODO: Replace with your Firebase project configuration
+              apiKey: "AIzaSyAxYj2wdUz0ZXcC19DMs7B3ZCySZ1Ys34Q",
+  authDomain: "ifsaplatformu-db7d6.firebaseapp.com",
+  projectId: "ifsaplatformu-db7d6",
+  storageBucket: "ifsaplatformu-db7d6.firebasestorage.app",
+  messagingSenderId: "756670967842",
+  appId: "1:756670967842:web:091510f469627488921a7b",
+  measurementId: "G-LSDTSV3PY1"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        // Automatically sign in anonymously on page load
+        auth.signInAnonymously()
+            .then(() => {
+                loadPosts();
+            })
+            .catch((error) => {
+                showModal('Hata: ' + error.message);
+            });
+
+        // Hamburger menu toggle
+        const hamburger = document.getElementById('hamburger');
+        const sidebar = document.getElementById('sidebar');
+        hamburger.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+
+        // Theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeToggleDesktop = document.getElementById('themeToggleDesktop');
+        [themeToggle, themeToggleDesktop].forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            });
+        });
+
+        // Apply saved theme
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        // Character count for textarea
+        const postContent = document.getElementById('postContent');
+        const charCount = document.getElementById('charCount');
+        postContent.addEventListener('input', () => {
+            const remaining = 500 - postContent.value.length;
+            charCount.textContent = `Kalan: ${remaining}/500`;
+        });
+
+        // Modal functions
+        function showModal(message) {
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+            sidebar.classList.remove('open');
+        }
+
+        // Submit post
+        function submitPost() {
+            const whom = document.getElementById('whom').value;
+            const content = document.getElementById('postContent').value;
+            if (!whom.trim() || !content.trim()) {
+                showModal('Lütfen tüm alanları doldurun!');
+                return;
+            }
+            const user = auth.currentUser;
+            if (!user) {
+                showModal('Lütfen tekrar deneyin, oturum açılamadı.');
+                return;
+            }
+            const post = {
+                whom: whom,
+                content: content,
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                userId: 'anonymous',
+                likes: 0
+            };
+            database.ref('posts').push(post)
+                .then(() => {
+                    document.getElementById('whom').value = '';
+                    document.getElementById('postContent').value = '';
+                    charCount.textContent = 'Kalan: 500/500';
+                    showModal('Paylaşım yapıldı!');
+                })
+                .catch((error) => showModal('Hata: ' + error.message));
+        }
+
+        // Load posts
+        function loadPosts() {
+            database.ref('posts').on('value', (snapshot) => {
+                const posts = snapshot.val();
+                const postsDiv = document.getElementById('posts');
+                postsDiv.innerHTML = '';
+                if (posts) {
+                    Object.entries(posts).forEach(([key, post]) => {
+                        const postElement = document.createElement('div');
+                        postElement.className = 'bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md';
+                        postElement.innerHTML = `
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                Anonim • ${new Date(post.timestamp).toLocaleString('tr-TR')}
+                            </p>
+                            <p class="mt-2 font-bold">→ ${post.whom}</p>
+                            <p class="mt-2">${post.content}</p>
+                            <div class="mt-2 flex items-center">
+                                <button onclick="likePost('${key}')" class="text-blue-500 hover:text-blue-600 flex items-center">
+                                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                    </svg>
+                                    ${post.likes || 0}
+                                </button>
+                            </div>
+                        `;
+                        postsDiv.appendChild(postElement);
+                    });
+                }
+            });
+        }
+
+        // Like post
+        function likePost(postId) {
+            const user = auth.currentUser;
+            if (!user) {
+                showModal('Oturum açılamadı, beğeni eklenemedi.');
+                return;
+            }
+            database.ref(`posts/${postId}/likes`).transaction((currentLikes) => {
+                return (currentLikes || 0) + 1;
+            }).catch((error) => showModal('Hata: ' + error.message));
+        }
+    </script>
+</body>
+</html>
